@@ -1,0 +1,103 @@
+{
+  "hero": {
+    "name": "Hey, I'm Shohaib Shaikh!",
+    "title": "Data Analyst | Financial & Market Analytics | Dashboard Builder",
+    "tagline": "Data Analyst and analytics platform builder with hands-on experience designing full-stack data workflows, dashboards, and insight engines. Skilled in SQL, Python, Power BI, Excel, and SQL, with a strong ability to convert data into meaningful financial and business insights."
+  },
+  "skillCategories": [
+    {
+      "id": "programming",
+      "title": "Programming Languages",
+      "items": [
+        "SQL",
+        "JavaScript"
+      ]
+    },
+    {
+      "id": "analytics-tools",
+      "title": "Data Analytics Tools",
+      "items": [
+        "Excel",
+        "VS Code",
+        "Jupyter Notenook"
+      ]
+    },
+    {
+      "id": "viz-tools",
+      "title": "Data Visualization Tools",
+      "items": [
+        "PowerBI",
+        "Tableau"
+      ]
+    },
+    {
+      "id": "methods",
+      "title": "Data Analytics Methods",
+      "items": [
+        "Machine Learning",
+        "ANOVA",
+        "Deep Learning"
+      ]
+    },
+    {
+      "id": "other",
+      "title": "Other Skills",
+      "items": [
+        "HTML",
+        "CSS",
+        "Flexbox",
+        "Bootstrap"
+      ]
+    }
+  ],
+  "projects": [
+    {
+      "id": "project-1767281698038",
+      "title": "News - Article Recommendation System",
+      "tools": [
+        "Python",
+        "SQL",
+        "EDA",
+        "Numpy",
+        "Pandas",
+        "Sci-Kit Learn",
+        "NLP."
+      ],
+      "description": "Designed a personalised recommendation system that suggests news articles and blogs based on users' reading history. Implemented NLP techniques and machine learning models to analyse user preferences and improve content relevance.",
+      "image": "/assets/uploads/projects/how-to-build-an-ai-powered-recommendation-system-1767281698018.jpg",
+      "link": "https://github.com/skshohaib11/News-Article-Recommender-System/tree/main"
+    }
+  ],
+  "experience": [
+    {
+      "id": "exp-1767284868214",
+      "company": "Frontline Managed Services",
+      "designation": "E-Billing Specialist",
+      "from": "2023-10-16",
+      "to": "2024-09-17",
+      "logo": "/assets/uploads/experience/exp-1767284868189.jpg",
+      "responsibilities": [
+        "Managed and analysed billing data for various law firms, ensuring accuracy and compliance with client requirements.",
+        "Developed and maintained dashboards to track invoicing trends and payment histories."
+      ]
+    }
+  ],
+  "education": [
+    {
+      "id": "edu-1767274983965",
+      "institute": "Simplilearn",
+      "degree": "Data Science & Analytics",
+      "year": "2022",
+      "image": "/assets/uploads/education/edu-1767274983961.jpg",
+      "description": "This program delivered comprehensive training in Data Science and Analytics, including data analysis, visualization, statistical methods, and machine learning, with practical exposure through industry-oriented projects completed with distinction."
+    },
+    {
+      "id": "edu-1767275328096",
+      "institute": "Visvesvaraya Technological University",
+      "degree": "Mechanical Engineering",
+      "year": "2015",
+      "image": "/assets/uploads/education/edu-1767275328070.jpeg",
+      "description": "Bachelor Degree, India"
+    }
+  ]
+}
