@@ -5,7 +5,8 @@ const { login } = require("./auth");
 const cmsRoutes = require("./cmsRoutes");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+
 
 /* ======================================================
    DEBUG LOGS (VERY IMPORTANT)
@@ -50,6 +51,11 @@ app.use(
 /* -------------------------
    START SERVER
 -------------------------- */
+
+app.get("/healthz", (req, res) => {
+  res.status(200).send("OK");
+});
+
 app.listen(PORT, () => {
   console.log("✅ Admin server running on http://localhost:" + PORT);
 });
