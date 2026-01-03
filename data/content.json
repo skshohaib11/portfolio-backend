@@ -4,7 +4,33 @@
     "title": "",
     "tagline": ""
   },
-  "skillCategories": [],
+  "skillCategories": [
+    {
+      "id": "programming",
+      "title": "Programming Languages",
+      "items": []
+    },
+    {
+      "id": "analytics-tools",
+      "title": "Data Analytics Tools",
+      "items": []
+    },
+    {
+      "id": "viz-tools",
+      "title": "Data Visualization Tools",
+      "items": []
+    },
+    {
+      "id": "methods",
+      "title": "Data Analytics Methods",
+      "items": []
+    },
+    {
+      "id": "other",
+      "title": "Other Skills",
+      "items": []
+    }
+  ],
   "projects": [],
   "experience": [],
   "education": []
