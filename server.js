@@ -42,10 +42,12 @@ app.use(
   express.static(path.join(__dirname, "..", "assets"))
 );
 
+
 app.use(
   "/assets/uploads",
-  express.static(path.join(__dirname, "..", "assets", "uploads"))
+  express.static(path.join(__dirname, "assets", "uploads"))
 );
+
 
 
 /* -------------------------
