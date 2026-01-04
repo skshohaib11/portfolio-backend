@@ -22,16 +22,6 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 
-function normalizeDate(input) {
-  if (!input) return null;
-
-  // expected: DD-MM-YYYY
-  const parts = input.split("-");
-  if (parts.length !== 3) return null;
-
-  const [dd, mm, yyyy] = parts;
-  return `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD
-}
 
 
 
@@ -197,8 +187,9 @@ router.post(
     try {
       const { company, designation, from, to, responsibilities } = req.body;
 
-      const fromDate = normalizeDate(from);
-      const toDate = normalizeDate(to);
+      // ✅ HTML date inputs already send YYYY-MM-DD
+      const fromDate = from && from !== "" ? from : null;
+      const toDate = to && to !== "" ? to : null;
 
       const responsibilitiesArray = responsibilities
         .split("\n")
@@ -220,6 +211,7 @@ router.post(
     }
   }
 );
+
 
 
 
