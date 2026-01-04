@@ -34,13 +34,16 @@ app.use("/api/cms", cmsRoutes);
 /* -------------------------
    STATIC FILES
 -------------------------- */
+
 app.use(
   "/assets",
   express.static(path.join(__dirname, "assets"))
 );
 
-app.use("/uploads", express.static(path.join(__dirname, "uploads")));
-
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
 
 /* -------------------------
    HEALTH CHECK
