@@ -124,6 +124,27 @@ router.post("/skills", verifyToken, async (req, res) => {
   }
 });
 
+router.delete("/skills/:id", verifyToken, async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = await pool.query(
+      "DELETE FROM skills WHERE id = $1",
+      [id]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ message: "Skill not found" });
+    }
+
+    res.json({ message: "Skill deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to delete skill" });
+  }
+});
+
+
 /* ======================================================
    PROJECTS (NO FILE CMS, DB ONLY)
 ====================================================== */
