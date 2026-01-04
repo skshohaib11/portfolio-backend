@@ -66,12 +66,20 @@ router.put("/hero", verifyToken, async (req, res) => {
 ====================================================== */
 router.post("/skill-categories", verifyToken, async (req, res) => {
   const { title } = req.body;
+
+  const id = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+
   await pool.query(
-    "INSERT INTO skill_categories (title) VALUES ($1)",
-    [title]
+    "INSERT INTO skill_categories (id, title) VALUES ($1,$2)",
+    [id, title]
   );
-  res.json({ message: "Category added" });
+
+  res.json({ message: "Category added", id });
 });
+
 
 router.post("/skills", verifyToken, async (req, res) => {
   const { category_id, name } = req.body;
@@ -91,16 +99,17 @@ router.delete("/skills/:id", verifyToken, async (req, res) => {
    PROJECTS (NO FILE CMS, DB ONLY)
 ====================================================== */
 router.post("/projects", verifyToken, async (req, res) => {
-  const { title, tools, description, link } = req.body;
+  const { title, description, link } = req.body;
 
   await pool.query(
-    `INSERT INTO projects (title, tools, description, link)
-     VALUES ($1,$2,$3,$4)`,
-    [title, tools, description, link]
+    `INSERT INTO projects (title, description, link)
+     VALUES ($1,$2,$3)`,
+    [title, description, link]
   );
 
   res.json({ message: "Project added" });
 });
+
 
 router.delete("/projects/:id", verifyToken, async (req, res) => {
   await pool.query("DELETE FROM projects WHERE id=$1", [req.params.id]);
@@ -113,14 +122,20 @@ router.delete("/projects/:id", verifyToken, async (req, res) => {
 router.post("/experience", verifyToken, async (req, res) => {
   const { company, designation, from, to, responsibilities } = req.body;
 
+  const responsibilitiesArray = Array.isArray(responsibilities)
+    ? responsibilities
+    : responsibilities.split("\n").filter(Boolean);
+
   await pool.query(
-    `INSERT INTO experience (company, designation, from_date, to_date, responsibilities)
+    `INSERT INTO experience
+     (company, designation, from_date, to_date, responsibilities)
      VALUES ($1,$2,$3,$4,$5)`,
-    [company, designation, from, to, responsibilities]
+    [company, designation, from, to, responsibilitiesArray]
   );
 
   res.json({ message: "Experience added" });
 });
+
 
 router.delete("/experience/:id", verifyToken, async (req, res) => {
   await pool.query("DELETE FROM experience WHERE id=$1", [req.params.id]);
@@ -131,16 +146,18 @@ router.delete("/experience/:id", verifyToken, async (req, res) => {
    EDUCATION
 ====================================================== */
 router.post("/education", verifyToken, async (req, res) => {
-  const { institute, degree, year, description } = req.body;
+  const { institute, degree, year, image, description } = req.body;
 
   await pool.query(
-    `INSERT INTO education (institute, degree, year, description)
-     VALUES ($1,$2,$3,$4)`,
-    [institute, degree, year, description]
+    `INSERT INTO education
+     (institute, degree, year, image, description)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [institute, degree, year, image, description]
   );
 
   res.json({ message: "Education added" });
 });
+
 
 router.delete("/education/:id", verifyToken, async (req, res) => {
   await pool.query("DELETE FROM education WHERE id=$1", [req.params.id]);
