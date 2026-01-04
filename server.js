@@ -7,15 +7,10 @@ const cmsRoutes = require("./cmsRoutes");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-
 /* ======================================================
-   DEBUG LOGS (VERY IMPORTANT)
+   DEBUG LOGS
 ====================================================== */
-
-// Shows exactly which server.js is running
 console.log("SERVER FILE:", __filename);
-
-// Shows exactly which cmsRoutes.js is loaded
 console.log("CMS ROUTES LOADED FROM:", require.resolve("./cmsRoutes"));
 
 /* -------------------------
@@ -30,34 +25,28 @@ app.use(express.json());
 app.post("/api/login", login);
 
 /* -------------------------
-   CMS ROUTES (NAMESPACED)
+   CMS ROUTES
 -------------------------- */
 app.use("/api/cms", cmsRoutes);
 
 /* -------------------------
-   STATIC FILES (IMAGES)
+   STATIC FILES
 -------------------------- */
 app.use(
   "/assets",
-  express.static(path.join(__dirname, "..", "assets"))
+  express.static(path.join(__dirname, "assets"))
 );
-
-
-app.use(
-  "/assets/uploads",
-  express.static(path.join(__dirname, "assets", "uploads"))
-);
-
-
 
 /* -------------------------
-   START SERVER
+   HEALTH CHECK
 -------------------------- */
-
 app.get("/healthz", (req, res) => {
   res.status(200).send("OK");
 });
 
+/* -------------------------
+   START SERVER
+-------------------------- */
 app.listen(PORT, () => {
   console.log("✅ Admin server running on http://localhost:" + PORT);
 });

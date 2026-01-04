@@ -1,359 +1,153 @@
-
 console.log("CMS ROUTES FILE ACTIVE:", __filename);
 
-
 const express = require("express");
-const fs = require("fs");
-const path = require("path");
 const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const { verifyToken } = require("./auth");
+const pool = require("./db");
 
 const router = express.Router();
-const CMS_PATH = path.join(__dirname, "data", "content.json");
-
-console.log("CMS FILE USED:", CMS_PATH);
 
 /* ======================================================
-   UTILITY FUNCTIONS
+   PUBLIC: GET CMS CONTENT
 ====================================================== */
-
-function readCMS() {
-  return JSON.parse(fs.readFileSync(CMS_PATH, "utf-8"));
-}
-
-function writeCMS(data) {
-  fs.writeFileSync(CMS_PATH, JSON.stringify(data, null, 2), "utf-8");
-}
-
-function generateId(prefix) {
-  return `${prefix}-${Date.now()}`;
-}
-/* ======================================================
-   GET FULL CMS CONTENT (PUBLIC)
-   GET /api/cms/content
-====================================================== */
-router.get("/content", (req, res) => {
+router.get("/content", async (req, res) => {
   try {
-    const data = readCMS();
-    res.json(data);
+    const hero = await pool.query("SELECT * FROM hero LIMIT 1");
+    const categories = await pool.query("SELECT * FROM skill_categories");
+    const skills = await pool.query("SELECT * FROM skills");
+    const projects = await pool.query("SELECT * FROM projects");
+    const experience = await pool.query("SELECT * FROM experience");
+    const education = await pool.query("SELECT * FROM education");
+
+    const skillCategories = categories.rows.map(cat => ({
+      id: cat.id,
+      title: cat.title,
+      items: skills.rows
+        .filter(s => s.category_id === cat.id)
+        .map(s => s.name)
+    }));
+
+    res.json({
+      hero: hero.rows[0] || { name: "", title: "", tagline: "" },
+      skillCategories,
+      projects: projects.rows,
+      experience: experience.rows,
+      education: education.rows
+    });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to load CMS content" });
   }
 });
 
 /* ======================================================
-   HERO UPDATE (ADMIN)
+   HERO (ADMIN)
 ====================================================== */
-router.put("/hero", verifyToken, (req, res) => {
+router.put("/hero", verifyToken, async (req, res) => {
   const { name, title, tagline } = req.body;
-  const cms = readCMS();
 
-  cms.hero = { name, title, tagline };
-  writeCMS(cms);
-
-  res.json({ message: "Hero section updated" });
+  try {
+    await pool.query("DELETE FROM hero");
+    await pool.query(
+      "INSERT INTO hero (name, title, tagline) VALUES ($1,$2,$3)",
+      [name, title, tagline]
+    );
+    res.json({ message: "Hero updated" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Hero update failed" });
+  }
 });
 
 /* ======================================================
-   SKILLS & Expertise CRUD
+   SKILLS
 ====================================================== */
-router.post("/skill-categories/:id/items", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const { name } = req.body;
+router.post("/skill-categories", verifyToken, async (req, res) => {
+  const { title } = req.body;
+  await pool.query(
+    "INSERT INTO skill_categories (title) VALUES ($1)",
+    [title]
+  );
+  res.json({ message: "Category added" });
+});
 
-  const cms = readCMS();
-  const category = cms.skillCategories.find(c => c.id === id);
-
-  if (!category) {
-    return res.status(404).json({ message: "Category not found" });
-  }
-
-  category.items.push(name);
-  writeCMS(cms);
-
+router.post("/skills", verifyToken, async (req, res) => {
+  const { category_id, name } = req.body;
+  await pool.query(
+    "INSERT INTO skills (category_id, name) VALUES ($1,$2)",
+    [category_id, name]
+  );
   res.json({ message: "Skill added" });
 });
 
-router.delete("/skill-categories/:id/items/:index", verifyToken, (req, res) => {
-  const { id, index } = req.params;
-
-  const cms = readCMS();
-  const category = cms.skillCategories.find(c => c.id === id);
-
-  if (!category) {
-    return res.status(404).json({ message: "Category not found" });
-  }
-
-  category.items.splice(index, 1);
-  writeCMS(cms);
-
-  res.json({ message: "Skill removed" });
+router.delete("/skills/:id", verifyToken, async (req, res) => {
+  await pool.query("DELETE FROM skills WHERE id=$1", [req.params.id]);
+  res.json({ message: "Skill deleted" });
 });
-
-
-
 
 /* ======================================================
-   MULTER CONFIG (PROJECT IMAGES)
+   PROJECTS (NO FILE CMS, DB ONLY)
 ====================================================== */
+router.post("/projects", verifyToken, async (req, res) => {
+  const { title, tools, description, link } = req.body;
 
-const PROJECTS_UPLOAD_DIR = path.join(
-  __dirname,
-  "..",
-  "assets",
-  "uploads",
-  "projects"
-);
+  await pool.query(
+    `INSERT INTO projects (title, tools, description, link)
+     VALUES ($1,$2,$3,$4)`,
+    [title, tools, description, link]
+  );
 
-// ensure folder exists
-if (!fs.existsSync(PROJECTS_UPLOAD_DIR)) {
-  fs.mkdirSync(PROJECTS_UPLOAD_DIR, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, PROJECTS_UPLOAD_DIR);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const name = file.originalname
-      .replace(ext, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "-");
-
-    cb(null, `${name}-${Date.now()}${ext}`);
-  }
+  res.json({ message: "Project added" });
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowed = ["image/png", "image/jpeg", "image/jpg"];
-  if (!allowed.includes(file.mimetype)) {
-    return cb(new Error("Only PNG, JPG, JPEG allowed"), false);
-  }
-  cb(null, true);
-};
-
-const uploadProjectImage = multer({
-  storage,
-  fileFilter
-});
-
-
-/* ===============================
-   EDUCATION & EXPERIENCE IMAGES
-================================ */
-
-const EDUCATION_UPLOAD_DIR = path.join(
-  __dirname,
-  "..",
-  "assets",
-  "uploads",
-  "education"
-);
-
-const EXPERIENCE_UPLOAD_DIR = path.join(
-  __dirname,
-  "..",
-  "assets",
-  "uploads",
-  "experience"
-);
-
-[EDUCATION_UPLOAD_DIR, EXPERIENCE_UPLOAD_DIR].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
-
-const educationStorage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, EDUCATION_UPLOAD_DIR),
-  filename: (_, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `edu-${Date.now()}${ext}`);
-  }
-});
-
-const experienceStorage = multer.diskStorage({
-  destination: (_, __, cb) => cb(null, EXPERIENCE_UPLOAD_DIR),
-  filename: (_, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `exp-${Date.now()}${ext}`);
-  }
-});
-
-const uploadEducationImage = multer({ storage: educationStorage });
-const uploadExperienceLogo = multer({ storage: experienceStorage });
-
-
-/* ======================================================
-   PROJECTS CRUD (WITH IMAGE UPLOAD)
-====================================================== */
-router.post(
-  "/projects",
-  verifyToken,
-  uploadProjectImage.single("image"),
-  (req, res) => {
-    const { title, tools, description, link } = req.body;
-    const cms = readCMS();
-
-    const imagePath = req.file
-      ? `/assets/uploads/projects/${req.file.filename}`
-      : "";
-
-    cms.projects.push({
-      id: generateId("project"),
-      title,
-      tools: tools ? tools.split(",").map(t => t.trim()) : [],
-      description,
-      image: imagePath,
-      link
-    });
-
-    writeCMS(cms);
-    res.json({ message: "Project added" });
-  }
-);
-
-/* ======================================================
-   DELETE PROJECT
-====================================================== */
-router.delete("/projects/:id", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const cms = readCMS();
-
-  const before = cms.projects.length;
-
-  cms.projects = cms.projects.filter(p => p.id !== id);
-
-  const after = cms.projects.length;
-
-  writeCMS(cms);
-
-  if (before === after) {
-    return res.status(404).json({ message: "Project not found" });
-  }
-
+router.delete("/projects/:id", verifyToken, async (req, res) => {
+  await pool.query("DELETE FROM projects WHERE id=$1", [req.params.id]);
   res.json({ message: "Project deleted" });
 });
 
-
-
-
 /* ======================================================
-   EXPERIENCE CRUD
+   EXPERIENCE
 ====================================================== */
-router.post(
-  "/experience",
-  verifyToken,
-  uploadExperienceLogo.single("logo"),
-  (req, res) => {
-    const { company, designation, from, to, responsibilities } = req.body;
+router.post("/experience", verifyToken, async (req, res) => {
+  const { company, designation, from, to, responsibilities } = req.body;
 
-    const cms = readCMS();
-
-    let parsedResponsibilities = [];
-
-    if (Array.isArray(responsibilities)) {
-      parsedResponsibilities = responsibilities;
-    } else if (typeof responsibilities === "string") {
-      try {
-        parsedResponsibilities = JSON.parse(responsibilities);
-      } catch {
-        parsedResponsibilities = responsibilities
-          .split("\n")
-          .map(r => r.trim())
-          .filter(Boolean);
-      }
-    }
-
-    const logoPath = req.file
-      ? `/assets/uploads/experience/${req.file.filename}`
-      : "";
-
-    cms.experience.push({
-      id: generateId("exp"),
-      company,
-      designation,
-      from,
-      to,
-      logo: logoPath,
-      responsibilities: parsedResponsibilities
-    });
-
-    writeCMS(cms);
-    res.json({ message: "Experience added" });
-  }
-);
-
-
-
-
-router.put("/experience/:id", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const cms = readCMS();
-
-  cms.experience = cms.experience.map(exp =>
-    exp.id === id ? { ...exp, ...req.body } : exp
+  await pool.query(
+    `INSERT INTO experience (company, designation, from_date, to_date, responsibilities)
+     VALUES ($1,$2,$3,$4,$5)`,
+    [company, designation, from, to, responsibilities]
   );
 
-  writeCMS(cms);
-  res.json({ message: "Experience updated" });
+  res.json({ message: "Experience added" });
 });
 
-router.delete("/experience/:id", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const cms = readCMS();
-
-  cms.experience = cms.experience.filter(exp => exp.id !== id);
-
-  writeCMS(cms);
+router.delete("/experience/:id", verifyToken, async (req, res) => {
+  await pool.query("DELETE FROM experience WHERE id=$1", [req.params.id]);
   res.json({ message: "Experience deleted" });
 });
 
-
-
-
 /* ======================================================
-   EDUCATION CRUD
+   EDUCATION
 ====================================================== */
-router.post(
-  "/education",
-  verifyToken,
-  uploadEducationImage.single("image"),
-  (req, res) => {
-    const { institute, degree, year, description } = req.body;
-    const cms = readCMS();
+router.post("/education", verifyToken, async (req, res) => {
+  const { institute, degree, year, description } = req.body;
 
-    if (!cms.education) cms.education = [];
+  await pool.query(
+    `INSERT INTO education (institute, degree, year, description)
+     VALUES ($1,$2,$3,$4)`,
+    [institute, degree, year, description]
+  );
 
-    const imagePath = req.file
-      ? `/assets/uploads/education/${req.file.filename}`
-      : "";
+  res.json({ message: "Education added" });
+});
 
-    cms.education.push({
-      id: generateId("edu"),
-      institute,
-      degree,
-      year,
-      image: imagePath,
-      description
-    });
-
-    writeCMS(cms);
-    res.json({ message: "Education added" });
-  }
-);
-
-
-router.delete("/education/:id", verifyToken, (req, res) => {
-  const { id } = req.params;
-  const cms = readCMS();
-
-  cms.education = (cms.education || []).filter(edu => edu.id !== id);
-
-  writeCMS(cms);
+router.delete("/education/:id", verifyToken, async (req, res) => {
+  await pool.query("DELETE FROM education WHERE id=$1", [req.params.id]);
   res.json({ message: "Education deleted" });
 });
 
-
+/* ======================================================
+   EXPORT (THIS IS THE KEY)
+====================================================== */
 module.exports = router;
