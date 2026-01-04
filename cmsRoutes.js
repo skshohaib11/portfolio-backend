@@ -39,8 +39,12 @@ router.get("/content", async (req, res) => {
       title: cat.title,
       items: skills.rows
         .filter(s => s.category_id === cat.id)
-        .map(s => s.name)
+        .map(s => ({
+          id: s.id,
+          name: s.name
+        }))
     }));
+
 
     res.json({
       hero: hero.rows[0] || { name: "", title: "", tagline: "" },
@@ -78,20 +82,12 @@ router.put("/hero", verifyToken, async (req, res) => {
    SKILLS
 ====================================================== */
 router.post("/skill-categories", verifyToken, async (req, res) => {
-  const { title } = req.body;
-
-  const id = title
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-
-  await pool.query(
-    "INSERT INTO skill_categories (id, title) VALUES ($1,$2)",
-    [id, title]
-  );
-
-  res.json({ message: "Category added", id });
+  return res.status(403).json({
+    message: "Skill categories are fixed and cannot be modified"
+  });
 });
+
+
 
 
 router.post("/skills", verifyToken, async (req, res) => {
