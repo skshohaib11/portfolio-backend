@@ -18,6 +18,8 @@ console.log("CMS ROUTES LOADED FROM:", require.resolve("./cmsRoutes"));
 -------------------------- */
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 /* -------------------------
    AUTH ROUTES
@@ -36,6 +38,9 @@ app.use(
   "/assets",
   express.static(path.join(__dirname, "assets"))
 );
+
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 
 /* -------------------------
    HEALTH CHECK

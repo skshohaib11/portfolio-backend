@@ -9,6 +9,19 @@ const pool = require("./db");
 
 const router = express.Router();
 
+
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, uploadDir),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname),
+});
+
+const upload = multer({ storage });
+
+
 /* ======================================================
    PUBLIC: GET CMS CONTENT
 ====================================================== */
@@ -98,17 +111,24 @@ router.delete("/skills/:id", verifyToken, async (req, res) => {
 /* ======================================================
    PROJECTS (NO FILE CMS, DB ONLY)
 ====================================================== */
-router.post("/projects", verifyToken, async (req, res) => {
-  const { title, description, link } = req.body;
+router.post(
+  "/projects",
+  verifyToken,
+  upload.single("image"),
+  async (req, res) => {
+    const { title, description, link, tools } = req.body;
+    const image = req.file ? `/uploads/${req.file.filename}` : null;
 
-  await pool.query(
-    `INSERT INTO projects (title, description, link)
-     VALUES ($1,$2,$3)`,
-    [title, description, link]
-  );
+    await pool.query(
+      `INSERT INTO projects (title, description, link, tools, image)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [title, description, link, tools, image]
+    );
 
-  res.json({ message: "Project added" });
-});
+    res.json({ message: "Project added" });
+  }
+);
+
 
 
 router.delete("/projects/:id", verifyToken, async (req, res) => {
@@ -119,22 +139,29 @@ router.delete("/projects/:id", verifyToken, async (req, res) => {
 /* ======================================================
    EXPERIENCE
 ====================================================== */
-router.post("/experience", verifyToken, async (req, res) => {
-  const { company, designation, from, to, responsibilities } = req.body;
+router.post(
+  "/experience",
+  verifyToken,
+  upload.single("logo"),
+  async (req, res) => {
+    const { company, designation, from, to, responsibilities } = req.body;
 
-  const responsibilitiesArray = Array.isArray(responsibilities)
-    ? responsibilities
-    : responsibilities.split("\n").filter(Boolean);
+    const responsibilitiesArray = responsibilities
+      .split("\n")
+      .filter(Boolean);
 
-  await pool.query(
-    `INSERT INTO experience
-     (company, designation, from_date, to_date, responsibilities)
-     VALUES ($1,$2,$3,$4,$5)`,
-    [company, designation, from, to, responsibilitiesArray]
-  );
+    const logo = req.file ? `/uploads/${req.file.filename}` : null;
 
-  res.json({ message: "Experience added" });
-});
+    await pool.query(
+      `INSERT INTO experience
+       (company, designation, from_date, to_date, responsibilities, logo)
+       VALUES ($1,$2,$3,$4,$5,$6)`,
+      [company, designation, from, to, responsibilitiesArray, logo]
+    );
+
+    res.json({ message: "Experience added" });
+  }
+);
 
 
 router.delete("/experience/:id", verifyToken, async (req, res) => {
@@ -145,18 +172,23 @@ router.delete("/experience/:id", verifyToken, async (req, res) => {
 /* ======================================================
    EDUCATION
 ====================================================== */
-router.post("/education", verifyToken, async (req, res) => {
-  const { institute, degree, year, image, description } = req.body;
+router.post(
+  "/education",
+  verifyToken,
+  upload.single("image"),
+  async (req, res) => {
+    const { institute, degree, year, description } = req.body;
+    const image = req.file ? `/uploads/${req.file.filename}` : null;
 
-  await pool.query(
-    `INSERT INTO education
-     (institute, degree, year, image, description)
-     VALUES ($1,$2,$3,$4,$5)`,
-    [institute, degree, year, image, description]
-  );
+    await pool.query(
+      `INSERT INTO education (institute, degree, year, image, description)
+       VALUES ($1,$2,$3,$4,$5)`,
+      [institute, degree, year, image, description]
+    );
 
-  res.json({ message: "Education added" });
-});
+    res.json({ message: "Education added" });
+  }
+);
 
 
 router.delete("/education/:id", verifyToken, async (req, res) => {
