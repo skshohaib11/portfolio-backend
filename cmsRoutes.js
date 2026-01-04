@@ -96,16 +96,36 @@ router.post("/skill-categories", verifyToken, async (req, res) => {
 
 router.post("/skills", verifyToken, async (req, res) => {
   const { category_id, name } = req.body;
-  await pool.query(
-    "INSERT INTO skills (category_id, name) VALUES ($1,$2)",
-    [category_id, name]
-  );
-  res.json({ message: "Skill added" });
-});
 
-router.delete("/skills/:id", verifyToken, async (req, res) => {
-  await pool.query("DELETE FROM skills WHERE id=$1", [req.params.id]);
-  res.json({ message: "Skill deleted" });
+  if (!category_id || !name) {
+    return res.status(400).json({ message: "Missing fields" });
+  }
+
+  try {
+    // 🔑 Convert title → UUID
+    const catResult = await pool.query(
+      "SELECT id FROM skill_categories WHERE title = $1",
+      [category_id]
+    );
+
+    if (catResult.rows.length === 0) {
+      return res.status(400).json({
+        message: "Skill category not found in database"
+      });
+    }
+
+    const realCategoryId = catResult.rows[0].id;
+
+    await pool.query(
+      "INSERT INTO skills (category_id, name) VALUES ($1, $2)",
+      [realCategoryId, name]
+    );
+
+    res.status(201).json({ message: "Skill added" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Failed to add skill" });
+  }
 });
 
 /* ======================================================
