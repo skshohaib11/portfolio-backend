@@ -181,24 +181,34 @@ router.post(
   verifyToken,
   upload.single("logo"),
   async (req, res) => {
-    const { company, designation, from, to, responsibilities } = req.body;
+    try {
+      const { company, designation, from, to, responsibilities } = req.body;
 
-    const responsibilitiesArray = responsibilities
-      .split("\n")
-      .filter(Boolean);
+      // ✅ FIX: normalize dates properly
+      const fromDate = from && from !== "" ? from : null;
+      const toDate = to && to !== "" ? to : null;
 
-    const logo = req.file ? `/uploads/${req.file.filename}` : null;
+      const responsibilitiesArray = responsibilities
+        .split("\n")
+        .filter(Boolean);
 
-    await pool.query(
-      `INSERT INTO experience
-       (company, designation, from_date, to_date, responsibilities, logo)
-       VALUES ($1,$2,$3,$4,$5,$6)`,
-      [company, designation, from, to, responsibilitiesArray, logo]
-    );
+      const logo = req.file ? `/uploads/${req.file.filename}` : null;
 
-    res.json({ message: "Experience added" });
+      await pool.query(
+        `INSERT INTO experience
+         (company, designation, from_date, to_date, responsibilities, logo)
+         VALUES ($1,$2,$3,$4,$5,$6)`,
+        [company, designation, fromDate, toDate, responsibilitiesArray, logo]
+      );
+
+      res.json({ message: "Experience added" });
+    } catch (err) {
+      console.error(err);
+      res.status(500).json({ message: "Failed to add experience" });
+    }
   }
 );
+
 
 
 router.delete("/experience/:id", verifyToken, async (req, res) => {
