@@ -26,7 +26,7 @@ const upload = multer({ storage });
 
 
 /* ======================================================
-   PUBLIC: GET CMS CONTENT
+   PUBLIC: GET CMS CONTENT (SAFE IMAGE PATHS)
 ====================================================== */
 router.get("/content", async (req, res) => {
   try {
@@ -48,14 +48,39 @@ router.get("/content", async (req, res) => {
         }))
     }));
 
+    /* ===============================
+       IMAGE SAFETY HELPERS
+    =============================== */
+    const safeImage = (row, key) => {
+      if (!row[key]) return null;
+
+      const fullPath = path.join(__dirname, row[key]);
+      return fs.existsSync(fullPath) ? row[key] : null;
+    };
+
+    const safeProjects = projects.rows.map(p => ({
+      ...p,
+      image: safeImage(p, "image")
+    }));
+
+    const safeExperience = experience.rows.map(e => ({
+      ...e,
+      logo: safeImage(e, "logo")
+    }));
+
+    const safeEducation = education.rows.map(e => ({
+      ...e,
+      image: safeImage(e, "image")
+    }));
 
     res.json({
       hero: hero.rows[0] || { name: "", title: "", tagline: "" },
       skillCategories,
-      projects: projects.rows,
-      experience: experience.rows,
-      education: education.rows
+      projects: safeProjects,
+      experience: safeExperience,
+      education: safeEducation
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to load CMS content" });

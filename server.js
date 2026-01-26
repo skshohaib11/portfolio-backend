@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const fs = require("fs");
 const { login } = require("./auth");
 const cmsRoutes = require("./cmsRoutes");
 
@@ -51,6 +52,12 @@ app.use(
 app.get("/healthz", (req, res) => {
   res.status(200).send("OK");
 });
+
+const uploadPath = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadPath)) {
+  fs.mkdirSync(uploadPath);
+}
+
 
 /* -------------------------
    START SERVER
