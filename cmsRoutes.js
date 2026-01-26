@@ -58,6 +58,7 @@ router.get("/content", async (req, res) => {
       return fs.existsSync(fullPath) ? row[key] : null;
     };
 
+
     const safeProjects = projects.rows.map(p => ({
       ...p,
       image: safeImage(p, "image")
